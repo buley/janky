@@ -17,7 +17,7 @@ var path = require('path')
 if ( '30' === fps) {
   fps = 33;
 } else if ('60' === fps) {
-  fps = 60;
+  fps = 16;
 }
 stream.on( 'data', function(data) {
 	file += data.toString();
