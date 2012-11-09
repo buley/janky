@@ -12,7 +12,30 @@ var path = require('path')
 , good_frames = []
 , bad_frames = []
 , between_frames = []
-, in_frames = [];
+, in_frames = []
+, show_quantiles = false
+, show_distribution = false
+, show_stats = false
+, show_good = false
+, show_bad = false
+, show_all = false;
+
+var x = 0, xlen = process.argv.length, xitem;
+for (; x < xlen; x += 1) {
+	if ( '--quantiles' === process.argv[ x ] ) {
+		show_quantiles = true;
+	} else if ( '--distribution' === process.argv[ x ] ) {
+		show_distribution = true;
+	} else if ( '--stats' === process.argv[ x ] ) {
+		show_stats = true;
+	} else if ( '--good' === process.argv[ x ] ) {
+		show_good = true;
+	} else if ( '--bad' === process.argv[ x ] ) {
+		show_bad = true;
+	} else if ( '--all' === process.argv[ x ] ) {
+		show_all= true;
+	}
+}
 
 if ( '30' === fps) {
   fps = 33;
@@ -95,154 +118,10 @@ stream.on( 'end', function() {
 		}
 		previous_item = item;
 	}
-	var finished_data = {
-		all: null,
-		bad: null,
-		good: null
-	};
 
-	var do_all = function() {
-		var _all_frames = new gauss.Vector( all_frames );
-		_all_frames.min( function(min) {
-			//console.log("MIN", min);
-			_all_frames.max( function(max) {
-				//console.log("MAX", max);
-				_all_frames.mean( function(mean) {
-					//console.log("MEAN", mean);
-					_all_frames.median( function(median) {
-						//console.log("MEDIAN", median);
-						_all_frames.median( function(range) {
-							//console.log("RANGE", range);
-							_all_frames.variance( function(variance) {
-								//console.log("VARIANCE", variance);
-								_all_frames_floored = _all_frames.map( function(frame) { return Math.floor( frame ) } );
-								_all_frames_floored.distribution( 'absolute', function(distribution) {
-									//console.log("DISTRIBUTION", distribution);
-									_all_frames.quantile( 11, function(quantile) {
-										//console.log("QUANTILE", quantile);
-										_all_frames.sma( 5, function(sma) {
-											//console.log("MOVING AVERAGE", sma);
-											finished_data.all = {
-												min: min,
-												max: max,
-												mean: mean,
-												median: median,
-												range: range,
-												variance: variance,
-												distribution: distribution,
-												quantile: quantile,
-												sma: sma
-											};
-											//console.log('finished all');
-											do_good();
-										} );
-									} );
-								} );
-							} );
-						} );
-					} );
-				} );
-			} );
-		} );
-	};
-
-	var do_good = function() {
-		var _good_frames = new gauss.Vector( good_frames );
-		_good_frames.min( function(min) {
-			//console.log("MIN", min);
-			_good_frames.max( function(max) {
-				//console.log("MAX", max);
-				_good_frames.mean( function(mean) {
-					//console.log("MEAN", mean);
-					_good_frames.median( function(median) {
-						//console.log("MEDIAN", median);
-						_good_frames.median( function(range) {
-							//console.log("RANGE", range);
-							_good_frames.variance( function(variance) {
-								//console.log("VARIANCE", variance);
-								_good_frames_floored = _good_frames.map( function(frame) { return Math.floor( frame ) } );
-								_good_frames_floored.distribution( 'absolute', function(distribution) {
-									//console.log("DISTRIBUTION", distribution);
-									_good_frames.quantile( 11, function(quantile) {
-										//console.log("QUANTILE", quantile);
-										_good_frames.sma( 5, function(sma) {
-											//console.log("MOVING AVERAGE", sma);
-											finished_data.good = {
-												min: min,
-												max: max,
-												mean: mean,
-												median: median,
-												range: range,
-												variance: variance,
-												distribution: distribution,
-												quantile: quantile,
-												sma: sma
-											};										
-											//console.log('finished good');
-											if( bad_frames.length === 0 ) {
-												delete finished_data.bad;
-												do_output();				
-											} else {				
-												do_bad();
-											}
-										} );
-									} );
-								} );
-							} );
-						} );
-					} );
-				} );
-			} );
-		} );
-	};
-
-	var do_bad = function() {
-		var _bad_frames = new gauss.Vector( bad_frames );
-		_bad_frames.min( function(min) {
-			//console.log("MIN", min);
-			_bad_frames.max( function(max) {
-				//console.log("MAX", max);
-				_bad_frames.mean( function(mean) {
-					//console.log("MEAN", mean);
-					_bad_frames.median( function(median) {
-						//console.log("MEDIAN", median);
-						_bad_frames.median( function(range) {
-							//console.log("RANGE", range);
-							_bad_frames.variance( function(variance) {
-								//console.log("VARIANCE", variance);
-								_bad_frames_floored = _bad_frames.map( function(frame) { return Math.floor( frame ) } );
-								_bad_frames_floored.distribution( 'absolute', function(distribution) {
-									//console.log("DISTRIBUTION", distribution);
-									_bad_frames.quantile( 11, function(quantile) {
-										//console.log("QUANTILE", quantile);
-										_bad_frames.sma( 5, function(sma) {
-											//console.log("MOVING AVERAGE", sma);
-											finished_data.bad = {
-												min: min,
-												max: max,
-												mean: mean,
-												median: median,
-												range: range,
-												variance: variance,
-												distribution: distribution,
-												quantile: quantile,
-												sma: sma
-											};
-											//console.log('finished bad');
-											do_output();								
-										} );
-									} );
-								} );
-							} );
-						} );
-					} );
-				} );
-			} );
-		} );
-	};
-
-	var do_output = function() {
-
+	var do_output = function( all_results ) {
+		console.log("OUTPUT",all_results);
+		return;
 		var table = new Table( {
 			head: [ 'Type', 'Min', 'Max', 'Mean', 'Median', 'Range', 'Variance' ],
 			colWidths: [ 10, 10, 10, 10, 10, 10, 10 ]
@@ -290,25 +169,29 @@ stream.on( 'end', function() {
 				}
 				table_3.push( table_3_arr );
 
-
 			}
-			console.log("######################");
-			console.log(">>>>> " + type.toUpperCase() + " FRAMES <<<<<" );
-			console.log("######################");
-			console.log();
-			console.log();
+
+		}
+
+		if( show_stats ) {	
 			console.log("###############################");
 			console.log("####### FRAME STATISTICS ######");
 			console.log("###############################");
 			console.log( table.toString() );
 			console.log();
 			console.log();
+		}
+
+		if( show_distribution ) {	
 			console.log("###############################");
 			console.log("### FRAME DISTRIBUTION (ms) ###");
 			console.log("###############################");
 			console.log( table_2.toString() );
 			console.log();
 			console.log();
+		}
+
+		if( show_quantiles ) {	
 			console.log("###############################");
 			console.log("#### FRAME QUANTILES (ms) #####");
 			console.log("###############################");
@@ -316,7 +199,152 @@ stream.on( 'end', function() {
 			console.log();
 			console.log();
 		}
+
 	};
 
-	do_all();
+
+	var do_distribution = function(coll, callback) {
+		coll_floored = coll.map( function(frame) { return Math.floor( frame ) } );
+		coll_floored.distribution( 'absolute', function(distribution) {
+			//console.log("DISTRIBUTION", distribution);
+			callback(coll, { distribution: distribution } );
+		} );
+	};
+
+	var do_quantiles = function(coll, callback) {
+		coll.quantile( 11, function(quantiles) {
+			//console.log("QUANTILES", quantiles);
+			callback(coll, { quantiles: quantiles  } );
+		} );
+	};
+
+	var do_stats = function(coll, callback) {
+		coll.min( function(min) {
+			//console.log("MIN", min);
+			coll.max( function(max) {
+				//console.log("MAX", max);
+				coll.mean( function(mean) {
+					//console.log("MEAN", mean);
+					coll.median( function(median) {
+						//console.log("MEDIAN", median);
+						coll.range( function(range) {
+							//console.log("RANGE", range);
+							coll.variance( function(variance) {
+								//console.log("VARIANCE", variance);
+								callback( coll, { 
+									min: min
+									, max: max
+									, mean: mean
+									, median: median
+									, range: range
+									, variance: variance
+								} );
+							} );
+						} );
+					} );
+				} );
+			} );
+		} ); 	
+	};
+
+	var check_finished = function(results) {
+		var target = 0, current = 0;
+		for( var type in results ) {
+			if ( results.hasOwnProperty( type ) ) {
+				if ( show_quantiles ) {
+					if( 'good' === type && show_good || 'bad' === type && show_bad || 'all' === type && show_all) {
+						target++;
+						if ( null !== results[ type ][ 'quantiles' ] ) {
+							current += 1;
+						}
+					}
+				}
+				if ( show_stats ) {
+					if( 'good' === type && show_good || 'bad' === type && show_bad || 'all' === type && show_all) {
+						target++;
+						if ( null !== results[ type ][ 'stats' ] ) {
+							current += 1;
+						}
+					} 
+				}
+				if ( show_distribution ) {
+					if( 'good' === type && show_good || 'bad' === type && show_bad || 'all' === type && show_all) {
+						target++;
+						if ( null !== results[ type ][ 'distributions' ] ) {
+							current += 1;
+						}
+					}
+				}
+			}
+		}
+		console.log("finsihed?",current,target);
+		if ( current === target ) {
+			return true;
+		} else {
+			return false;
+		}
+	};
+
+	var all_results = {
+		all: { stats: null, quantiles: null, distribution: null }
+		, bad: { stats: null, quantiles: null, distribution: null }
+		, good: { stats: null, quantiles: null, distribution: null }
+	};
+
+	var do_items = ( function(all_results_obj) {
+		var vectors = [];
+		if (show_bad) {
+			 vectors.push( { type: 'bad', data: new gauss.Vector( bad_frames ) } );
+		}
+		if (show_good) {
+			 vectors.push( { type: 'good', data: new gauss.Vector( good_frames ) } );
+		}
+		if (show_all) {
+			 vectors.push( { type: 'all', data: new gauss.Vector( all_frames ) } );
+		}
+		var a = 0, alen = vectors.length;
+		for(; a < alen; a += 1) {
+			var vector_item = vectors[ a ];
+
+			( function( vector, all ) {
+
+				all[ vector.type ] = all[ vector.type ] || {}
+
+				var did_stats = function( coll, results ) {
+					all[ vector.type ][ 'stats' ] = results;
+					if ( check_finished( all ) )  {
+						do_output( all );
+					}
+				};
+				var did_quantiles = function( coll, results ) {
+					all[ vector.type ][ 'quantiles' ] = results;
+					if ( check_finished( all ) )  {
+						do_output( all );
+					}
+				};
+				var did_distribution = function( coll, results ) {
+					all[ vector.type ][ 'distribution' ] = results;
+					if ( check_finished( all ) )  {
+						do_output( all );
+					}
+				};
+
+				if ( show_stats ) {
+					do_stats( vector.data, did_stats );	
+				}
+
+				if ( show_distribution ) {
+					do_distribution( vector.data, did_distribution );	
+				}
+
+				if ( show_quantiles ) {
+					do_quantiles( vector.data, did_quantiles );	
+				}
+
+			} )( vector_item, all_results_obj )
+		}
+
+	} )( all_results );
+
 } );
+
