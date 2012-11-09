@@ -120,57 +120,69 @@ stream.on( 'end', function() {
 	}
 
 	var do_output = function( all_results ) {
-		console.log("OUTPUT",all_results);
-		return;
+
 		var table = new Table( {
 			head: [ 'Type', 'Min', 'Max', 'Mean', 'Median', 'Range', 'Variance' ],
 			colWidths: [ 10, 10, 10, 10, 10, 10, 10 ]
 		} );
+		
 
 		var table_2 = new Table( {
 			head: [ 'type', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17+' ],
 			colWidths: [ 10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]
-		} );
+		} )
+		, table_2_arr = [];
 
 		var table_3 = new Table( {
 			head: [ 'type', '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%' ], 
 			colWidths: [ 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 ]
-		} );
+		} )
+		, table_3_arr = [];
 
+		for( var data_type in all_results ) {
+			if( all_results.hasOwnProperty( data_type ) ) {
+				for( var stats_type in all_results[ data_type ] ) {
+					if( all_results[ data_type ].hasOwnProperty( stats_type ) ) {
+						
+						var obj = all_results[ data_type ][ stats_type ];
 
-		for( var type in finished_data ) {
-			if( finished_data.hasOwnProperty( type ) ) {
-				var obj = finished_data[ type ];
-				table.push( 
-					[ type, obj.min, obj.max, obj.mean, obj.median, obj.range, obj.variance ]
-				);
-				table_2_arr = [ type ];
-				var ct = 0;
-				var extra = 0;
-				for( var attr in obj.distribution ) {
-					if ( obj.distribution.hasOwnProperty( attr ) ) {
-						if( ct >= 16 ) {
-							extra += obj.distribution[ attr ];
-						} else {
-							table_2_arr.push( obj.distribution[ attr ] );
+						if( 'stats' === stats_type && null !== obj ) {
+							table.push( 
+								[ data_type, obj.min, obj.max, obj.mean, obj.median, obj.range, obj.variance ]
+							);
 						}
-						ct++;
+						
+						if( 'distribution' === stats_type && null !== obj) {
+							table_2_arr = [ data_type ];
+							var ct = 0;
+							var extra = 0;
+							for( var attr in obj.distribution ) {
+								if ( obj.distribution.hasOwnProperty( attr ) ) {
+									if( ct >= 16 ) {
+										extra += obj.distribution[ attr ];
+									} else {
+										table_2_arr.push( obj.distribution[ attr ] );
+									}
+									ct++;
+								}
+							}
+							table_2_arr.push( extra );
+							table_2.push( table_2_arr );
+						}
+
+						if( 'quantiles' === stats_type && null !== obj) {
+							table_3_arr = [ data_type ];
+							var ct = 0;
+							for( var attr in obj.quantiles ) {
+								if ( obj.quantiles.hasOwnProperty( attr ) ) {
+									table_3_arr.push( obj.quantiles[ attr ] );
+								}
+							}
+							table_3.push( table_3_arr );
+						}
 					}
 				}
-				table_2_arr.push( extra );
-				table_2.push( table_2_arr );
-
-				table_3_arr = [ type ];
-				var ct = 0;
-				for( var attr in obj.distribution ) {
-					if ( obj.quantile.hasOwnProperty( attr ) ) {
-						table_3_arr.push( obj.quantile[ attr ] );
-					}
-				}
-				table_3.push( table_3_arr );
-
 			}
-
 		}
 
 		if( show_stats ) {	
